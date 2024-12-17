@@ -1,40 +1,62 @@
+import math
 import sys
 from typing import List
-
-from django.template.defaultfilters import random
 
 Vector = List[float]
 
 def calc_distance(vector1:Vector,vector2:Vector):
-    pass
+    sum=0
+    for i in range(len(vector1)):
+        sum += (vector1[i]-vector2[i])**2
+    return math.sqrt(sum)
 
-def argmin():
-    pass
 
-def argmin(vector:Vector, centroid:Vector):
-    for i in range(len(vector)):
-        pass
+def argmin(point:Vector, centroids:List[Vector]):
+    min_dist = sys.maxsize
+    index = -1
+    for i in range(len(centroids)):
+        dist = calc_distance(point,centroids[i])
+        if dist < min_dist:
+            min_dist = dist
+            index=i
+    return index
+        
 
 
 def calculate_new_centroid(cluster: list[Vector], cords_num: int) -> Vector:
-    pass
+    new_cent: Vector = [0.0] * cords_num
+    sum=0
+    for i in range(len(cluster)):
+        for j in range(cords_num):
+            new_cent[j] += cluster[i][j]
+    for i in range(len(new_cent)):
+        new_cent[i]=round(new_cent[i]/len(cluster),4)
+    return new_cent
 
 
-def kmeans(k:int,iterations:int,cords_num:int,vectors:List[Vector],epsilon:float=0.001):
-    centroids = initialize_centroids(vectors, k)
+def kmeans(k:int,iterations:int,cords_num:int,points:List[Vector],epsilon:float=0.001):
+    centroids = initialize_centroids(points, k)
     clusters: list[list[Vector]] = [[] for _ in range(k)]
     curr_i = 0
     converged = False
     while (curr_i < iterations and not converged):
-        previous_centroid = []
+        previous_centroids = centroids
+        for i in range(len(points)):
+            for j in range(cords_num):
+                cluster_index = argmin(points[i],centroids)
+                clusters[cluster_index].append(points[i])
 
-        # Check convergence
-        for centroid in centroids:
-            if (calc_distance(centroid, previous_centroid) < epsilon):
+        for i in range(len(clusters)):
+            centroids[i] = calculate_new_centroid(clusters[i],cords_num)
+        curr_i += 1
+        for i in range(len(centroids)):
+            if (calc_distance(centroids[i], previous_centroids[i]) < epsilon):
                 converged = True
             else:
                 converged = False
                 break
+        return clusters
+        
 
 
 def initialize_centroids(vectors: List[Vector], k:int) -> List[Vector]:
@@ -57,7 +79,13 @@ def main():
 
 
     k = int(k)
-    kmeans(k,int(iterations),cords_num,all_dots)
+    clusters = kmeans(k,int(iterations),cords_num,all_dots)
+    for i, cluster in enumerate(clusters):
+        print(f"Cluster {i}:")
+        for vector in cluster:
+            print(vector)
+
+
 
 
 def load_dots():
