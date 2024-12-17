@@ -16,13 +16,13 @@ def argmin(vector:Vector, centroid:Vector):
         pass
 
 
-def calculate_new_centroid(cluster: list[Vector]) -> Vector:
+def calculate_new_centroid(cluster: list[Vector], cords_num: int) -> Vector:
     pass
 
 
 def kmeans(k:int,iterations:int,cords_num:int,vectors:List[Vector],epsilon:float=0.001):
-    centroids = initialize_centroids(k, cords_num)
-    clusters = [[] for _ in range(k)]
+    centroids = initialize_centroids(vectors, k)
+    clusters: list[list[Vector]] = [[] for _ in range(k)]
     curr_i = 0
     converged = False
     while (curr_i < iterations and not converged):
@@ -37,30 +37,27 @@ def kmeans(k:int,iterations:int,cords_num:int,vectors:List[Vector],epsilon:float
                 break
 
 
-def initialize_centroids(k:int, cords_num: int) -> List[Vector]:
-    centroids = []
-    for i in range(k):
-        centroid: Vector = []
-        for _ in range(cords_num):
-            centroid.append(random.random())
-        centroids.append(centroid)
-    return centroids
+def initialize_centroids(vectors: List[Vector], k:int) -> List[Vector]:
+    if k > len(vectors):
+        raise ValueError('k must be less than/ equal to the number of vectors')
+    return vectors[:k]
 
 
 def main():
     if len(sys.argv) !=4:
         print("Usage: python kmeans.py <K> <iterations> <data_path>")
         return
-    all_dots, cords_num, k, iterations, vectors = load_dots()
+    all_dots, cords_num, k, iterations, vectors_num = load_dots()
 
     print("\nmatrix:")
-    for i in range(vectors):
+    for i in range(vectors_num):
         for j in range(cords_num):
             print (f"{all_dots[i][j]} ", end="")
         print()
 
 
     k = int(k)
+    kmeans(k,int(iterations),cords_num,all_dots)
 
 
 def load_dots():
@@ -68,7 +65,7 @@ def load_dots():
     print(k, iterations, data_path)
     with open(data_path, "r") as file:
         lines = file.readlines()
-        vectors = len(lines)
+        vectors_num = len(lines)
 
         cords_num = len(lines[0].strip().split(","))
 
@@ -76,7 +73,7 @@ def load_dots():
         for line in lines:
             print(line.strip())
 
-        all_dots = [[0.0 for _ in range(cords_num)] for _ in range(vectors)]
+        all_dots = [[0.0 for _ in range(cords_num)] for _ in range(vectors_num)]
     with open(data_path, "r") as file:
 
         for j, line in enumerate(file):
@@ -84,7 +81,7 @@ def load_dots():
 
             for i in range(len(line_arr)):
                 all_dots[j][i] = round(float(line_arr[i]), 4)
-    return all_dots, cords_num, k, iterations, vectors
+    return all_dots, cords_num, k, iterations, vectors_num
 
 
 if __name__ == "__main__":
