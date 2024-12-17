@@ -39,8 +39,9 @@ def kmeans(k: int, iterations: int, cords_num: int, points: List[Vector], epsilo
     clusters: list[list[Vector]] = [[] for _ in range(k)]
     curr_i = 0
     converged = False
-    while (curr_i < iterations and not converged):
-        previous_centroids = centroids
+    while curr_i < iterations and not converged:
+        clusters = [[] for _ in range(k)]
+        previous_centroids = [centroid[:] for centroid in centroids]
         for i in range(len(points)):
             cluster_index = argmin(points[i], centroids)
             clusters[cluster_index].append(points[i])
@@ -49,12 +50,12 @@ def kmeans(k: int, iterations: int, cords_num: int, points: List[Vector], epsilo
             centroids[i] = calculate_new_centroid(clusters[i], cords_num)
         curr_i += 1
         for i in range(len(centroids)):
-            if (calc_distance(centroids[i], previous_centroids[i]) < epsilon):
+            if calc_distance(centroids[i], previous_centroids[i]) < epsilon:
                 converged = True
             else:
                 converged = False
                 break
-        return clusters
+    return clusters
 
 
 def initialize_centroids(vectors: List[Vector], k: int) -> List[Vector]:
