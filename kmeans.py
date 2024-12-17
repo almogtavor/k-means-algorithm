@@ -42,9 +42,8 @@ def kmeans(k:int,iterations:int,cords_num:int,points:List[Vector],epsilon:float=
     while (curr_i < iterations and not converged):
         previous_centroids = centroids
         for i in range(len(points)):
-            for j in range(cords_num):
-                cluster_index = argmin(points[i],centroids)
-                clusters[cluster_index].append(points[i])
+            cluster_index = argmin(points[i],centroids)
+            clusters[cluster_index].append(points[i])
 
         for i in range(len(clusters)):
             centroids[i] = calculate_new_centroid(clusters[i],cords_num)
