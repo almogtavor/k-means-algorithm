@@ -47,9 +47,51 @@ int argmin(struct vector *point, struct vector **centroids, int k){
 }
     
 
-// Function to calculate a new centroid based on a cluster of points
 struct vector *calculate_new_centroid(struct vector *cluster_head, int cords_num){
+    struct vector *new_centroid = malloc(sizeof(struct vector));
+    struct cord *new_cord, *head_cord;
+    int i = 0;
+    head_cord = NULL;
+    while (i < cords_num) {
+        new_cord = malloc(sizeof(struct cord));
+        new_cord->value = 0;
+        new_cord->next = head_cord;
+        head_cord = new_cord;
+        i++;
+    }
+    new_centroid->cords = head_cord;
 
+    struct cord *curr_cord_of_cluster = cluster_head->cords;
+    struct cord *curr_cord_of_new_centroid = new_centroid->cords;
+
+    int count = 0;
+
+    while (cluster_head != NULL)
+    {
+        while (curr_cord_of_cluster != NULL)
+        {
+            curr_cord_of_new_centroid->value += curr_cord_of_cluster->value;
+            curr_cord_of_cluster = curr_cord_of_cluster->next;
+            curr_cord_of_new_centroid = curr_cord_of_new_centroid->next;
+        }
+        
+        count++;
+        cluster_head = cluster_head->next;
+        curr_cord_of_cluster = cluster_head->cords;
+        curr_cord_of_new_centroid = new_centroid->cords;
+    }
+
+    if (count > 0) {
+        curr_cord_of_new_centroid = new_centroid->cords;
+        while (curr_cord_of_new_centroid != NULL) {
+            curr_cord_of_new_centroid->value /= count; // Divide by the number of vectors
+            curr_cord_of_new_centroid = curr_cord_of_new_centroid->next;
+        }
+    }
+
+    // Step 5: Return the newly calculated centroid
+    return new_centroid;
+    
 }
 
 // k-means algorithm
