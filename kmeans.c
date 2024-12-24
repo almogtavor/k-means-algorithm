@@ -1,6 +1,6 @@
 # include <stdio.h>
 # include <stdlib.h>
-#include <math.h>
+# include <math.h>
 
 struct cord
 {
@@ -12,6 +12,7 @@ struct vector
     struct vector *next;
     struct cord *cords;
 };
+
 
 // Function to calculate the Euclidean distance between two vectors
 double calc_distance(struct vector *vector1, struct vector *vector2){
@@ -88,12 +89,10 @@ struct vector *calculate_new_centroid(struct vector *cluster_head, int cords_num
             curr_cord_of_new_centroid = curr_cord_of_new_centroid->next;
         }
     }
-
     // Step 5: Return the newly calculated centroid
     return new_centroid;
     
 }
-
 // k-means algorithm
 struct vector **kmeans(int k, int iterations, int cords_num, struct vector *points_head, double epsilon);
 
