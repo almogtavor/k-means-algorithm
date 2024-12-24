@@ -66,7 +66,10 @@ struct vector *calculate_new_centroid(struct vector **cluster, int cluster_size,
 struct vector **kmeans(int k, int iterations, int cords_num, struct vector *points, double epsilon);
 
 // // Function to initialize the centroids for k-means
-struct vector **initialize_centroids(struct vector *points, int k, int cords_num);
+struct vector **initialize_centroids(struct double *points, int k, int cords_num)
+{
+    poi
+}
 
 
     
@@ -129,6 +132,9 @@ int k = atoi(argv[1]);
         }
         printf("\n");
     }
+
+
+    // kmeans()
 
     // Free the allocated memory
     for (int i = 0; i < vectors_num; i++) {
