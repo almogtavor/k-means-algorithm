@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-
+double **initialize_centroids(double **points, int k, int cords_num);
 double calc_distance(double *point1, double *point2, int cords_num) {
     double sum = 0, temp = 0;
     for (int i = 0; i < cords_num; i++) {
@@ -31,7 +31,6 @@ int argmin(double *point, double **centroids, int k, int cords_num) {
 double *calculate_new_centroid(double **cluster, int cluster_size, int cords_num) {
     double *new_centroid = malloc(sizeof(double *));
     new_centroid = malloc(sizeof(double) * cords_num);
-    new_centroid = cords_num;
     for (int i = 0; i < cords_num; i++) {
         new_centroid[i] = 0.0;
     }
@@ -46,19 +45,64 @@ double *calculate_new_centroid(double **cluster, int cluster_size, int cords_num
     return new_centroid;
 }
 
-double **kmeans(int k, int iterations, int cords_num, double **points, int vectors_num, double epsilon) {
+double ***kmeans(int k, int iterations, int cords_num, double **points, int vectors_num, double epsilon) {
     double **centroids = initialize_centroids(points, k, cords_num);
+    double **prev_centroids = initialize_centroids(points, k, cords_num);
+    printf("hi");
     double ***clusters = malloc(sizeof(double **) * k); // Array of clusters
     int *cluster_sizes = malloc(sizeof(int) * k); // Array to store the size of each cluster
 
+    for (int i = 0; i < k; i++) {
+        cluster_sizes[i] = 0;
+    }
 
+   
 
-    // Free centroids memory
+    int curr_i = 0;
+    int converged = 0;
+    while (curr_i < k && converged ==0 )
+    {
+        
+
+        for (int i = 0; i < k; i++) {
+            cluster_sizes[i] = 0;
+            clusters[i] = NULL;
+        }
+
+        for (int i = 0; i < vectors_num; i++) {
+            int cluster_index = argmin(points[i], centroids, k, cords_num);
+            clusters[cluster_index][cluster_sizes[cluster_index]++] = points[i];
+        }
+
+        
+
+        for (int i = 0; i < k; i++) {
+            double *new_centroid = calculate_new_centroid(clusters[i], cluster_sizes[i], cords_num);
+            for (int j = 0; j < cords_num; j++) {
+                prev_centroids[i][j] = centroids[i][j];
+                centroids[i][j] = new_centroid[j];
+            }
+        }
+
+        converged = 1;
+        for (int i = 0; i < k; i++) {
+            if (calc_distance(centroids[i], prev_centroids[i], cords_num) >= epsilon) {
+                converged = 0;
+                break;
+            }
+        }
+
+        curr_i++;
+    }
+    
+
+    
     for (int i = 0; i < k; i++) {
         free(centroids[i]);
     }
     free(centroids);
     free(cluster_sizes);
+    return clusters;
 }
 
 // Function to initialize the centroids for k-means
@@ -70,6 +114,8 @@ double **initialize_centroids(double **points, int k, int cords_num) {
             centroids[i][j] = points[i][j];
         }
     }
+
+
     return centroids;
 }
     
@@ -131,28 +177,28 @@ int main(int argc, char **argv) {
     double epsilon = 0.001; // Convergence threshold
     double ***clusters = kmeans(k, iterations, cords_num, all_points, vectors_num, epsilon);
 
-    printf("\nClusters:\n");
-    for (int i = 0; i < k; i++) {
-        printf("Cluster %d:\n", i + 1);
-        for (int j = 0; clusters[i][j] != NULL; j++) {
-            for (int c = 0; c < cords_num; c++) {
-                printf("%.4f ", clusters[i][j][c]); // the .4 is because we want to round the float and take only 4 numbers
-            }
-            printf("\n");
-        }
-        printf("\n");
-    }
+    // printf("\nClusters:\n");
+    // for (int i = 0; i < k; i++) {
+    //     printf("Cluster %d:\n", i + 1);
+    //     for (int j = 0; clusters[i][j] != NULL; j++) {
+    //         for (int c = 0; c < cords_num; c++) {
+    //             printf("%.4f ", clusters[i][j][c]); // the .4 is because we want to round the float and take only 4 numbers
+    //         }
+    //         printf("\n");
+    //     }
+    //     printf("\n");
+    // }
 
-    for (int i = 0; i < k; i++) {
-        free(clusters[i]);
-    }
-    free(clusters);
+    // for (int i = 0; i < k; i++) {
+    //     free(clusters[i]);
+    // }
+    // free(clusters);
 
-    // Free the allocated memory
-    for (int i = 0; i < vectors_num; i++) {
-        free(all_points[i]);
-    }
-    free(all_points);
+    // // Free the allocated memory
+    // for (int i = 0; i < vectors_num; i++) {
+    //     free(all_points[i]);
+    // }
+    // free(all_points);
 
     return 0;
 }
