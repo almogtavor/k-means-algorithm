@@ -2,7 +2,22 @@
 #include <stdlib.h>
 #include <math.h>
 
+#define def_epsilon 0.001
+#define def_iteration 200
+
+
+
 double **initialize_centroids(double **points, int k, int cords_num);
+
+// Function to check if a string is a positive integer
+int is_positive_integer(const char *str) {
+    if (str == NULL || *str == '\0') return 0; // Empty string or NULL is invalid
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (str[i] < '0' || str[i] > '9') return 0; // Non-digit character found
+    }
+    return 1; // All characters are digits
+}
+
 double calc_distance(double *point1, double *point2, int cords_num) {
     double sum = 0, temp = 0;
     for (int i = 0; i < cords_num; i++) {
@@ -12,10 +27,9 @@ double calc_distance(double *point1, double *point2, int cords_num) {
 }
 
 int argmin(double *point, double **centroids, int k, int cords_num) {
-    // todo: convert to maxfloat
     double min_dist = calc_distance(point, centroids[0], cords_num);
     double dist = 0.0;
-    int closest_index = -1;
+    int closest_index = 0;
 
     for (int i = 1; i < k; i++) {
         dist = calc_distance(point, centroids[i], cords_num);
@@ -29,8 +43,7 @@ int argmin(double *point, double **centroids, int k, int cords_num) {
 
 // A function to calculate the new centroid by averaging the points in the cluster
 double *calculate_new_centroid(double **cluster, int cluster_size, int cords_num) {
-    double *new_centroid = malloc(sizeof(double *));
-    new_centroid = malloc(sizeof(double) * cords_num);
+    double *new_centroid = malloc(sizeof(double) * cords_num);
     for (int i = 0; i < cords_num; i++) {
         new_centroid[i] = 0.0;
     }
@@ -45,45 +58,46 @@ double *calculate_new_centroid(double **cluster, int cluster_size, int cords_num
     return new_centroid;
 }
 
-double ***kmeans(int k, int iterations, int cords_num, double **points, int vectors_num, double epsilon) {
+double **kmeans(int k, int iterations, int cords_num, double **points, int vectors_num, double epsilon, int *cluster_sizes) {
     double **centroids = initialize_centroids(points, k, cords_num);
     double **prev_centroids = initialize_centroids(points, k, cords_num);
-    printf("hi");
-    double ***clusters = malloc(sizeof(double **) * k); // Array of clusters
-    int *cluster_sizes = malloc(sizeof(int) * k); // Array to store the size of each cluster
+    double ***clusters = malloc(sizeof(double**) * k); // Pointer of the array of clusters
 
+    // Allocate memory for clusters
     for (int i = 0; i < k; i++) {
+        clusters[i] = malloc(sizeof(double *) * vectors_num); // Allocate memory for each cluster
+        for (int j = 0; j < vectors_num; j++) {
+            clusters[i][j] = malloc(sizeof(double) * cords_num); // Allocate for each point in cluster
+        }
         cluster_sizes[i] = 0;
     }
-
-   
-
     int curr_i = 0;
     int converged = 0;
-    while (curr_i < k && converged ==0 )
-    {
-        
-
+    while (curr_i < k && converged == 0) {
         for (int i = 0; i < k; i++) {
             cluster_sizes[i] = 0;
-            clusters[i] = NULL;
+            for (int j = 0; j < vectors_num; j++) {
+                for (int l = 0; l < cords_num; l++) {
+                    clusters[i][j][l] = 0.0; // Reset cluster values to 0
+                }
+            }
         }
-
         for (int i = 0; i < vectors_num; i++) {
             int cluster_index = argmin(points[i], centroids, k, cords_num);
-            clusters[cluster_index][cluster_sizes[cluster_index]++] = points[i];
+            int size = cluster_sizes[cluster_index];        
+            for (int l = 0; l < cords_num; l++) {
+                clusters[cluster_index][size][l] = points[i][l];
+            }
+            cluster_sizes[cluster_index]++;
         }
-
-        
-
         for (int i = 0; i < k; i++) {
             double *new_centroid = calculate_new_centroid(clusters[i], cluster_sizes[i], cords_num);
             for (int j = 0; j < cords_num; j++) {
                 prev_centroids[i][j] = centroids[i][j];
                 centroids[i][j] = new_centroid[j];
             }
+            free(new_centroid); // Free the temp new centroid
         }
-
         converged = 1;
         for (int i = 0; i < k; i++) {
             if (calc_distance(centroids[i], prev_centroids[i], cords_num) >= epsilon) {
@@ -91,18 +105,19 @@ double ***kmeans(int k, int iterations, int cords_num, double **points, int vect
                 break;
             }
         }
-
         curr_i++;
-    }
-    
-
-    
+    }    
     for (int i = 0; i < k; i++) {
-        free(centroids[i]);
+        free(prev_centroids[i]);
+        for (int j = 0; j < vectors_num; j++) {
+            free(clusters[i][j]);
+        }
+        free(clusters[i]);
     }
-    free(centroids);
-    free(cluster_sizes);
-    return clusters;
+    free(prev_centroids);
+    free(clusters);
+
+    return centroids; // Return the centroids instead of clusters
 }
 
 // Function to initialize the centroids for k-means
@@ -114,42 +129,67 @@ double **initialize_centroids(double **points, int k, int cords_num) {
             centroids[i][j] = points[i][j];
         }
     }
-
-
     return centroids;
 }
     
 int main(int argc, char **argv) {
+
+    if (!is_positive_integer(argv[1])) {
+        printf("Invalid number of clusters!");
+        return 1;
+    }
+
     int k = atoi(argv[1]);
-    int iterations = atoi(argv[2]);
+    int iterations = def_iteration; // Default value
+
+    if (argc >= 3) {
+        if (!is_positive_integer(argv[2])) {
+            printf("Invalid maximum iteration!\n");
+            return 1;
+        }
+        iterations = atoi(argv[2]);
+    }
+
+    if (iterations >= 1000 || iterations < 1) {
+        printf("Invalid maximum iteration!");
+        return 1;
+    }
+
+    if (k < 1) {
+        printf("Invalid number of clusters!");
+        return 1;
+    }
+
     int cords_num = 0, vectors_num = 0;
     double n;
     int is_first_line = 0;
-    // First pass: Read input to count the number of vectors and coordinates
     while (scanf("%lf,", &n) == 1) {
         if (is_first_line == 0) {
-            cords_num++;  // Count the number of coordinates per vector
+            cords_num++; // Count the number of coordinates per vector
         }
         if (getchar() == '\n') {
             is_first_line = 1;
-            vectors_num++;  // Count the number of vectors (lines)
+            vectors_num++; // Count the number of vectors (lines)
         }
     }
 
-    printf("Num of cordinates is %d and num of vectors is %d", cords_num, vectors_num);
-    // If no coordinates were found, assume at least one coordinate per vector
+    if (k > vectors_num)
+    {
+        printf("Invalid number of clusters!");
+        return 1;
+    }
+    
+
     if (cords_num == 0 && vectors_num > 0) {
         cords_num = 1;
     }
 
-    // Now we know how many vectors and coordinates exist, we need to allocate memory for them
     double **all_points = malloc(sizeof(double *) * vectors_num);
     for (int i = 0; i < vectors_num; i++) {
         all_points[i] = malloc(sizeof(double) * cords_num);
     }
 
-    // Second pass: Read the actual data into the 2D array `all_points`
-    rewind(stdin);  // Rewind the input to the beginning
+    rewind(stdin); // Rewind the input to the beginning
     int vector_index = 0;
     char c;
     while (vector_index < vectors_num) {
@@ -159,46 +199,38 @@ int main(int argc, char **argv) {
                 return 1;
             }
             if (c == '\n') {
-                break; // end of the current vector
+                break; // End of the current vector
             }
         }
         vector_index++;
     }
 
-    // Print the matrix (all points)
-    printf("\nMatrix of points:\n");
-    for (int i = 0; i < vectors_num; i++) {
+    int *cluster_sizes = malloc(sizeof(int) * k); // Array to store the size of each cluster
+    for (int i = 0; i < k; i++) {
+        cluster_sizes[i] = 0;
+    }
+
+
+    double **centroids = kmeans(k, iterations, cords_num, all_points, vectors_num, def_epsilon, cluster_sizes);
+
+    for (int i = 0; i < k; i++) {
         for (int j = 0; j < cords_num; j++) {
-            printf("%.4f ", all_points[i][j]);
+            printf("%.4f ", centroids[i][j]);
         }
         printf("\n");
     }
 
-    double epsilon = 0.001; // Convergence threshold
-    double ***clusters = kmeans(k, iterations, cords_num, all_points, vectors_num, epsilon);
+    free(cluster_sizes);
 
-    // printf("\nClusters:\n");
-    // for (int i = 0; i < k; i++) {
-    //     printf("Cluster %d:\n", i + 1);
-    //     for (int j = 0; clusters[i][j] != NULL; j++) {
-    //         for (int c = 0; c < cords_num; c++) {
-    //             printf("%.4f ", clusters[i][j][c]); // the .4 is because we want to round the float and take only 4 numbers
-    //         }
-    //         printf("\n");
-    //     }
-    //     printf("\n");
-    // }
+    for (int i = 0; i < k; i++) {
+        free(centroids[i]);
+    }
+    free(centroids);
 
-    // for (int i = 0; i < k; i++) {
-    //     free(clusters[i]);
-    // }
-    // free(clusters);
-
-    // // Free the allocated memory
-    // for (int i = 0; i < vectors_num; i++) {
-    //     free(all_points[i]);
-    // }
-    // free(all_points);
+    for (int i = 0; i < vectors_num; i++) {
+        free(all_points[i]);
+    }
+    free(all_points);
 
     return 0;
 }
