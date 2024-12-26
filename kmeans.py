@@ -3,7 +3,11 @@ import sys
 from typing import List
 
 Vector = List[float]
+DEF_EPSILON = 0.001
+DEF_ITERATION = 200
 
+def is_positive_integer(value):
+    return isinstance(value, int) and value > 0
 
 def calc_distance(vector1: Vector, vector2: Vector):
     sum = 0
@@ -34,7 +38,7 @@ def calculate_new_centroid(cluster: list[Vector], cords_num: int) -> Vector:
     return new_cent
 
 
-def kmeans(k: int, iterations: int, cords_num: int, points: List[Vector], epsilon: float = 0.001):
+def kmeans(k: int, iterations: int, cords_num: int, points: List[Vector], epsilon: float = DEF_EPSILON):
     centroids = initialize_centroids(points, k)
     clusters: list[list[Vector]] = [[] for _ in range(k)]
     curr_i = 0
@@ -55,7 +59,7 @@ def kmeans(k: int, iterations: int, cords_num: int, points: List[Vector], epsilo
             else:
                 converged = False
                 break
-    return clusters
+    return centroids
 
 
 def initialize_centroids(vectors: List[Vector], k: int) -> List[Vector]:
@@ -65,37 +69,61 @@ def initialize_centroids(vectors: List[Vector], k: int) -> List[Vector]:
 
 
 def main():
-    if len(sys.argv) != 4:
-        print("Usage: python kmeans.py <K> <iterations> <data_path>")
-        return
+
+    if len(sys.argv) > 4 or len(sys.argv) < 3:
+        print("An Error Has Occurred")
+        sys.exit(1)
+
     all_dots, cords_num, k, iterations, vectors_num = load_dots()
-
-    print("\nmatrix:")
-    for i in range(vectors_num):
-        for j in range(cords_num):
-            print(f"{all_dots[i][j]} ", end="")
+    
+    centroids = kmeans(k, iterations, cords_num, all_dots)
+    print()
+    for i, centroid in enumerate(centroids):
+        for vector in centroid:
+            print(vector,end=" ")
         print()
-
-    k = int(k)
-    clusters = kmeans(k, int(iterations), cords_num, all_dots)
-    for i, cluster in enumerate(clusters):
-        print(f"Cluster {i}:")
-        for vector in cluster:
-            print(vector)
 
 
 def load_dots():
-    _, k, iterations, data_path = sys.argv
-    print(k, iterations, data_path)
+    
+    if len(sys.argv) == 4:
+        k=sys.argv[1]
+        iterations = sys.argv[2]
+        data_path = sys.argv[-1]
+    if len(sys.argv) == 3:
+        k=sys.argv[1]
+        iterations = DEF_ITERATION
+        data_path = sys.argv[-1]
+    
+
+    try:
+        k = int(k)
+        if k <= 0:
+            raise ValueError("Number of clusters must be greater than 0.")
+    except ValueError:
+        print("Invalid number of clusters!")
+        sys.exit(1)
+
+    # Validate iterations (ensure it's an integer and greater than 0)
+    try:
+        iterations = int(iterations)
+        if iterations <= 0 or iterations>=1000:
+            raise ValueError("Iterations must be greater than 0.")
+    except ValueError:
+        print("Invalid maximum iterations!")
+        sys.exit(1)
+
+    k=int(k)
+    iterations=int(iterations)
+
     with open(data_path, "r") as file:
         lines = file.readlines()
         vectors_num = len(lines)
-
+        if k > vectors_num:
+            print("Invalid number of clusters! 3")
+            sys.exit(1) 
         cords_num = len(lines[0].strip().split(","))
 
-        print("\nFile Contents:")
-        for line in lines:
-            print(line.strip())
 
         all_dots = [[0.0 for _ in range(cords_num)] for _ in range(vectors_num)]
     with open(data_path, "r") as file:
