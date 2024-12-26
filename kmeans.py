@@ -30,8 +30,6 @@ def argmin(point: Vector, centroids: List[Vector]):
 
 
 def calculate_new_centroid(cluster: list[Vector], cords_num: int) -> Vector:
-    print("cluster is")
-    print(cluster)
     new_cent: Vector = [0.0] * cords_num
     for i in range(len(cluster)):
         for j in range(cords_num):
@@ -43,11 +41,10 @@ def calculate_new_centroid(cluster: list[Vector], cords_num: int) -> Vector:
 
 def kmeans(k: int, iterations: int, cords_num: int, points: List[Vector], epsilon: float = DEF_EPSILON):
     centroids = initialize_centroids(points, k)
-    # clusters: list[list[Vector]] = [[] for _ in range(k)]
     curr_i = 0
     converged = False
     while curr_i < iterations and not converged:
-        clusters = [[] for _ in range(k)]
+        clusters: list[list[Vector]] = [[] for _ in range(k)]
         previous_centroids = [centroid[:] for centroid in centroids]
         for i in range(len(points)):
             cluster_index = argmin(points[i], centroids)
