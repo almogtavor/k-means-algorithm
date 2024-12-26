@@ -133,7 +133,7 @@ double **initialize_centroids(double **points, int k, int cords_num) {
 }
     
 int main(int argc, char **argv) {
-    if (argc < 2 && argc >4)
+    if (argc < 2 || argc >4)
     {
         printf("An Error Has Occurred");
         return 1;
