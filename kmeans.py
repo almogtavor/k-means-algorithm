@@ -35,7 +35,7 @@ def calculate_new_centroid(cluster: list[Vector], cords_num: int) -> Vector:
         for j in range(cords_num):
             new_cent[j] += cluster[i][j]
     for i in range(len(new_cent)):
-        new_cent[i] = round(new_cent[i] / len(cluster), 4)
+        new_cent[i] = new_cent[i] / len(cluster)
     return new_cent
 
 
@@ -76,17 +76,18 @@ def main():
     all_dots, cords_num, k, iterations, vectors_num = load_dots()
 
     centroids = kmeans(k, iterations, cords_num, all_dots)
-    print()
     for i, centroid in enumerate(centroids):
-        for vector in centroid:
-            print(vector, end=" ")
-        print()
+        for j in range(len(centroid)):
+            if (j<len(centroid)-1):
+                print(f"{centroid[j]:.4f}", end=",")
+            else:
+                print(f"{centroid[j]:.4f}")
 
 
 def load_dots():
     if len(sys.argv) == 4:
         k = sys.argv[1]
-        iterations = int(sys.argv[2])
+        iterations = sys.argv[2]
         data_path = sys.argv[-1]
     elif len(sys.argv) == 3:
         k = sys.argv[1]
@@ -95,41 +96,46 @@ def load_dots():
     else:
         raise ValueError("Invalid args provided")
 
+    # Validate iterations (ensure it's an integer and greater than 0)
+    try:
+        iterations = int(iterations)
+        if iterations <= 1 or iterations >= 1000:
+            raise ValueError("Invalid maximum iteration!")
+    except ValueError:
+        print("Invalid maximum iteration!")
+        sys.exit(1)
+
     try:
         k = int(k)
-        if k <= 0:
+        if k <= 1 or k > iterations:
             raise ValueError("Number of clusters must be greater than 0.")
     except ValueError:
         print("Invalid number of clusters!")
         sys.exit(1)
 
-    # Validate iterations (ensure it's an integer and greater than 0)
     try:
-        iterations = int(iterations)
-        if iterations <= 0 or iterations >= 1000:
-            raise ValueError("Iterations must be greater than 0 and lower than 1000.")
-    except ValueError:
-        print("Invalid maximum iterations!")
+        with open(data_path, "r") as file:
+            lines = file.readlines()
+            vectors_num = len(lines)
+            if k > vectors_num:
+                print(f"Invalid number of clusters!")
+                sys.exit(1)
+            cords_num = len(lines[0].strip().split(","))
+
+            all_dots = [[0.0 for _ in range(cords_num)] for _ in range(vectors_num)]
+        with open(data_path, "r") as file:
+            for j, line in enumerate(file):
+                line_arr = line.split(",")
+
+                for i in range(len(line_arr)):
+                    try:
+                        all_dots[j][i] = float(line_arr[i])
+                    except ValueError:
+                        print("An Error Has Occurred")
+                        sys.exit(1)
+    except FileNotFoundError:
+        print("An Error Has Occurred")
         sys.exit(1)
-
-    k = int(k)
-    iterations = int(iterations)
-
-    with open(data_path, "r") as file:
-        lines = file.readlines()
-        vectors_num = len(lines)
-        if k > vectors_num:
-            print(f"Invalid number of clusters! k ({k}) was larger than the number of vectors ({vectors_num}).")
-            sys.exit(1)
-        cords_num = len(lines[0].strip().split(","))
-
-        all_dots = [[0.0 for _ in range(cords_num)] for _ in range(vectors_num)]
-    with open(data_path, "r") as file:
-        for j, line in enumerate(file):
-            line_arr = line.split(",")
-
-            for i in range(len(line_arr)):
-                all_dots[j][i] = round(float(line_arr[i]), 4)
     return all_dots, cords_num, k, iterations, vectors_num
 
 
