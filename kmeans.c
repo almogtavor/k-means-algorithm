@@ -30,18 +30,18 @@ int is_positive_integer(const char *str) {
 }
 
 
-long double calc_distance(double *point1, double *point2, int cords_num) {
-    long double sum = 0;
+double calc_distance(double *point1, double *point2, int cords_num) {
+    double sum = 0;
     int i;
     for (i = 0; i < cords_num; i++) {
-        sum += (long double)(point1[i] - point2[i]) * (long double)(point1[i] - point2[i]);
+        sum += (double)(point1[i] - point2[i]) * (double)(point1[i] - point2[i]);
     }
-    return sqrt(sum); /* Use sqrtl for long double */
+    return sqrt(sum);
 }
 
 int argmin(double *point, double **centroids, int k, int cords_num) {
-    long double min_dist = calc_distance(point, centroids[0], cords_num);
-    long double dist = 0.0;
+    double min_dist = calc_distance(point, centroids[0], cords_num);
+    double dist = 0.0;
     int closest_index, i;
 
     min_dist = calc_distance(point, centroids[0], cords_num);
@@ -77,7 +77,7 @@ double *calculate_new_centroid(double **cluster, int cluster_size, int cords_num
     return new_centroid;
 }
 
-double **kmeans(int k, int cords_num, double **points, int vectors_num, double epsilon, int *cluster_sizes) {
+double **kmeans(int k, int iterations, int cords_num, double **points, int vectors_num, double epsilon, int *cluster_sizes) {
     double **centroids, **prev_centroids, ***clusters;
     int i, j, l, curr_i, converged;
 
@@ -95,7 +95,7 @@ double **kmeans(int k, int cords_num, double **points, int vectors_num, double e
     }
     curr_i = 0;
     converged = 0;
-    while (curr_i < k && converged == 0) {
+    while (curr_i < iterations && converged == 0) {
         for (i = 0; i < k; i++) {
             cluster_sizes[i] = 0;
             for (j = 0; j < vectors_num; j++) {
@@ -143,14 +143,24 @@ double **kmeans(int k, int cords_num, double **points, int vectors_num, double e
     return centroids; /* Return the centroids instead of clusters */
 }
 
+/* Function to validate the input file for allowed characters */
+int validate_input() {
+    char c;
+    while ((c = getchar()) != EOF) {
+        if ((c < '0' || c > '9') && c != '.' && c != ',' && c != '\n' && c != '-') {
+            /* If the character is not a digit, decimal point, comma, newline, or minus sign */
+            return 0;
+        }
+    }
+    return 1;
+}
 
 int main(int argc, char **argv) {
     int k, iterations, cords_num, vectors_num, vector_index, is_first_line;
     double n, **all_points, **centroids;
-    char c;
     int *cluster_sizes;
 
-    if (argc < 2 || argc > 4) {
+    if (argc < 2 || argc >= 4) {
         printf("An Error Has Occurred\n");
         return 1;
     }
@@ -180,6 +190,12 @@ int main(int argc, char **argv) {
         printf("Invalid number of clusters!\n");
         return 1;
     }
+    
+    if (!validate_input()) {
+        printf("An Error Has Occurred\n");
+        return 1;
+    }
+    rewind(stdin);
 
     cords_num = 0;
     vectors_num = 0;
@@ -212,6 +228,7 @@ int main(int argc, char **argv) {
     vector_index = 0;
     while (vector_index < vectors_num) {
         int i;
+        char c;
         for (i = 0; i < cords_num; i++) {
             if (scanf("%lf%c", &all_points[vector_index][i], &c) != 2 || (c != ',' && c != '\n')) {
                 printf("An Error Has Occurred\n");
@@ -229,7 +246,7 @@ int main(int argc, char **argv) {
         cluster_sizes[vector_index] = 0;
     }
 
-    centroids = kmeans(k, cords_num, all_points, vectors_num, def_epsilon, cluster_sizes);
+    centroids = kmeans(k, iterations, cords_num, all_points, vectors_num, def_epsilon, cluster_sizes);
 
     for (vector_index = 0; vector_index < k; vector_index++) {
         int j;
