@@ -67,37 +67,22 @@ static PyObject* GetList(PyObject* self, PyObject* args)
     return python_val;
 }
 
-// module's function table
-static PyMethodDef DemoLib_FunctionsTable[] = {
-    {
-        "sfactorial_sum", // name exposed to Python
-        DemoLib_cFactorialSum, // C wrapper function
-        METH_VARARGS, // received variable args (but really just 1)
-        "Calculates factorial sum from digits in string of numbers" // documentation
-    }, {
-        "ifactorial_sum", // name exposed to Python
-        DemoLib_iFactorialSum, // C wrapper function
-        METH_VARARGS, // received variable args (but really just 1)
-        "Calculates factorial sum from list of ints" // documentation
-    }, {
-        "get_list", // name exposed to Python
-        GetList, // C wrapper function
-        METH_VARARGS, // received variable args (but really just 1)
-        "get list of ints" // documentation
-    }, {
-        NULL, NULL, 0, NULL
-    }
+/* Module method function table */
+static PyMethodDef kmeansMethods[] = {
+    {"fit", fit, METH_VARARGS, "Run the k-means algorithm"},
+    {NULL, NULL, 0, NULL}  // Sentinel
 };
 
-// modules definition
-static struct PyModuleDef DemoLib_Module = {
+/* Module definition */
+static struct PyModuleDef kmeansmodule = {
     PyModuleDef_HEAD_INIT,
-    "demo",     // name of module exposed to Python
-    "Demo Python wrapper for custom C extension library.", // module documentation
-    -1,
-    DemoLib_FunctionsTable
+    "mykmeanssp",  // Module name in python
+    "Python interface for the k-means algorithm",  // Module documentation
+    -1,  // Module state
+    kmeansMethods
 };
 
-PyMODINIT_FUNC PyInit_demo(void) {
-    return PyModule_Create(&DemoLib_Module);
+/* Module initialization function */
+PyMODINIT_FUNC PyInit_mykmeanssp(void) {
+    return PyModule_Create(&kmeansmodule);
 }
