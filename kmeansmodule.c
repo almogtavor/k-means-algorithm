@@ -1,70 +1,76 @@
 # define PY_SSIZE_T_CLEAN
 # include <Python.h>
-# include <stdio.h>
-# include "demolib.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 
-int counter = 0;
-// wrapper function for cfactorial_sum
-static PyObject *DemoLib_cFactorialSum(PyObject *self, PyObject *args) {
-    char *char_nums;
-    if (!PyArg_ParseTuple(args, "s", &char_nums)) {
+#define DEF_EPSILON 0.001
+#define DEF_ITERATION 300
+
+// Function declarations
+double **initialize_centroids(double **points, int k, int cords_num);
+double calc_distance(double *point1, double *point2, int cords_num);
+int argmin(double *point, double **centroids, int k, int cords_num);
+double *calculate_new_centroid(double **cluster, int cluster_size, int cords_num);
+double **kmeans(int k, int iterations, int cords_num, double **points, int vectors_num, double epsilon, int *cluster_sizes);
+
+static PyObject *fit(PyObject *self, PyObject *args) {
+    PyObject *init_centroids_list, *data_points_list;
+    int k, iterations, vectors_num, cords_num;
+    double epsilon;
+    int *cluster_sizes;
+    double **data_points, **centroids;
+
+    // Parse Python arguments - OO → Two Python objects (initial centroids & data points), i → Integer (number of clusters (k) & iterations), d → Double (epsilon)
+    if (!PyArg_ParseTuple(args, "OOiid", &init_centroids_list, &data_points_list, &k, &iterations, &epsilon)) {
+        PyErr_SetString(PyExc_ValueError, "Invalid arguments to fit function");
         return NULL;
     }
 
-    unsigned long fact_sum;
-    fact_sum = cfactorial_sum(char_nums);
+    vectors_num = PyObject_Length(data_points_list);
+    cords_num = PyObject_Length(PyList_GetItem(data_points_list, 0));
 
-    return Py_BuildValue("i", fact_sum);
-}
+    // Allocate memory for data points and centroids
+    data_points = (double **)malloc(vectors_num * sizeof(double *));
+    centroids = (double **)malloc(k * sizeof(double *));
+    cluster_sizes = (int *)malloc(k * sizeof(int));
 
-// wrapper function for ifactorial_sum
-static PyObject *DemoLib_iFactorialSum(PyObject *self, PyObject *args) {
-    PyObject *lst;
-    PyObject *item;
-    long num;
-    if (!PyArg_ParseTuple(args, "O", &lst)) {
-        return NULL;
+    for (int i = 0; i < vectors_num; i++) {
+        PyObject *vector = PyList_GetItem(data_points_list, i);
+        data_points[i] = (double *)malloc(cords_num * sizeof(double));
+        for (int j = 0; j < cords_num; j++) {
+            data_points[i][j] = PyFloat_AsDouble(PyList_GetItem(vector, j));
+        }
     }
 
-    int n = PyObject_Length(lst);
-    if (n < 0) {
-        return NULL;
+    for (int i = 0; i < k; i++) {
+        PyObject *vector = PyList_GetItem(init_centroids_list, i);
+        centroids[i] = (double *)malloc(cords_num * sizeof(double));
+        for (int j = 0; j < cords_num; j++) {
+            centroids[i][j] = PyFloat_AsDouble(PyList_GetItem(vector, j));
+        }
     }
 
-    long *nums = (long *)malloc(n * sizeof(long));
-    if (nums == NULL) {
-        printf("Memory allocation failed. Exiting.\n");
-        return NULL;
-    }
-    int i;
-    for (i = 0; i < n; i++) {
-        item = PyList_GetItem(lst, i);
-        num = PyLong_AsLong(item);
-        nums[i] = num;
-    }
+    // Perform K-means clustering
+    centroids = kmeans(k, iterations, cords_num, data_points, vectors_num, epsilon, cluster_sizes);
 
-    unsigned long fact_sum;
-    fact_sum = ifactorial_sum(nums, n);
-    free(nums);
-    return Py_BuildValue("i", fact_sum);
-}
+    PyObject *result = PyList_New(k);
+    for (int i = 0; i < k; i++) {
+        PyObject *centroid = PyList_New(cords_num);
+        for (int j = 0; j < cords_num; j++) {
+            PyList_SetItem(centroid, j, PyFloat_FromDouble(centroids[i][j]));
+        }
+        PyList_SetItem(result, i, centroid);
+        free(centroids[i]);
+    }
+    free(centroids);
+    free(cluster_sizes);
+    for (int i = 0; i < vectors_num; i++) {
+        free(data_points[i]);
+    }
+    free(data_points);
 
-static PyObject* GetList(PyObject* self, PyObject* args)
-{
-    int N,r;
-    PyObject* python_val;
-    PyObject* python_int;
-    if (!PyArg_ParseTuple(args, "i", &N)) {
-        return NULL;
-    }
-    python_val = PyList_New(N);
-    for (int i = 0; i < N; ++i)
-    {
-        r = i;
-        python_int = Py_BuildValue("i", r);
-        PyList_SetItem(python_val, i, python_int);
-    }
-    return python_val;
+    return result;
 }
 
 /* Module method function table */
