@@ -81,8 +81,7 @@ def main():
         random_index = np.random.choice(all_points.index)
         first_centroid = all_points.loc[[random_index]].copy()
 
-        centroids = choose_centroids(all_points, first_centroid, k)
-
+        centroids = choose_centroids(all_points, first_centroid, k)        
         # Call the C extension's fit function. We remove the key column before
         data_points = all_points.iloc[:, 1:].values.tolist()
         initial_centroids = centroids.iloc[:, 1:].values.tolist()
