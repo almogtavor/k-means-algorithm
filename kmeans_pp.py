@@ -47,17 +47,19 @@ def main():
         return
 
     try:
-        k = int(sys.argv[1])
-        if k <= 1:
+        k = sys.argv[1]
+        if (type(k) is str and not k.isdigit()) or int(k) <= 1:
             raise ValueError("Invalid number of clusters!")
-        max_iter = int(sys.argv[2]) if len(sys.argv) == 6 else DEF_ITERATION
-        if not (1 < max_iter < 1000):
+        max_iter = sys.argv[2] if len(sys.argv) == 6 else DEF_ITERATION
+        if (type(max_iter) is str and not max_iter.isdigit()) or not (1 < int(max_iter) < 1000):
             raise ValueError("Invalid maximum iteration!")
         eps = float(sys.argv[3])
         if eps < 0:
             raise ValueError("Invalid epsilon!")
         file1_name = sys.argv[4]
         file2_name = sys.argv[5]
+        k = int(k)
+        max_iter = int(max_iter)
     except ValueError as e:
         print(e)
         return
@@ -69,9 +71,12 @@ def main():
         print(f"Error reading input files: {e}")
         return
 
+    all_points = pd.merge(file1, file2, how="inner", on=0)
+    all_points = all_points.sort_values(by=0)
+    if len(all_points) <= k:
+        print("Invalid number of clusters!")
+        return
     try:
-        all_points = pd.merge(file1, file2, how="inner", on=0)
-        all_points = all_points.sort_values(by=0)
         # Initialize centroids using k-means++
         random_index = np.random.choice(all_points.index)
         first_centroid = all_points.loc[[random_index]].copy()
